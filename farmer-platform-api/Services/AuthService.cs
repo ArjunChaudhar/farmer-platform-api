@@ -3,6 +3,7 @@ using farmer_platform_api.DTOs.Auth;
 using farmer_platform_api.Entities;
 using farmer_platform_api.Helpers;
 using farmer_platform_api.Interfaces;
+using farmer_platform_api.Models;
 using FarmerPlatform.API.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,14 +22,14 @@ namespace farmer_platform_api.Services
             _jwtTokenGenerator = jwtTokenGenerator;
         }
 
-        public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request)
+        public async Task<ApiResponse<AuthResponseDto>> RegisterAsync(RegisterRequestDto request)
         {
             var existingUser = await _context.Users
                 .FirstOrDefaultAsync(x => x.Mobile == request.Mobile);
 
             if (existingUser != null)
             {
-                return new AuthResponseDto
+                return new ApiResponse<AuthResponseDto>
                 {
                     Success = false,
                     Message = "User already exists"
@@ -49,22 +50,25 @@ namespace farmer_platform_api.Services
 
             var token = _jwtTokenGenerator.GenerateToken(user);
 
-            return new AuthResponseDto
+            return new ApiResponse<AuthResponseDto>
             {
                 Success = true,
                 Message = "Registration successful",
-                Token = token
+                Data = new AuthResponseDto
+                {
+                    Token = token
+                }
             };
         }
 
-        public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
+        public async Task<ApiResponse<AuthResponseDto>> LoginAsync(LoginRequestDto request)
         {
             var user = await _context.Users
                 .FirstOrDefaultAsync(x => x.Mobile == request.Mobile);
 
             if (user == null)
             {
-                return new AuthResponseDto
+                return new ApiResponse<AuthResponseDto>
                 {
                     Success = false,
                     Message = "Invalid mobile number"
@@ -77,7 +81,7 @@ namespace farmer_platform_api.Services
 
             if (!isPasswordValid)
             {
-                return new AuthResponseDto
+                return new ApiResponse<AuthResponseDto>
                 {
                     Success = false,
                     Message = "Invalid password"
@@ -86,11 +90,14 @@ namespace farmer_platform_api.Services
 
             var token = _jwtTokenGenerator.GenerateToken(user);
 
-            return new AuthResponseDto
+            return new ApiResponse<AuthResponseDto>
             {
                 Success = true,
                 Message = "Login successful",
-                Token = token
+                Data = new AuthResponseDto
+                {
+                    Token = token
+                }
             };
         }
     }

@@ -7,6 +7,9 @@ using System.Text;
 using farmer_platform_api.Helpers;
 using farmer_platform_api.Interfaces;
 using farmer_platform_api.Services;
+using Microsoft.OpenApi.Models;
+using farmer_platform_api.Middleware;
+using Serilog;
 
 namespace farmer_platform_api
 {
@@ -18,12 +21,58 @@ namespace farmer_platform_api
 
             //  Add services to the container BEFORE builder.Build()
 
+
+            //Added Logs
+            Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .WriteTo.Console()
+    .WriteTo.File(
+        "Logs/log-.txt",
+        rollingInterval: RollingInterval.Day)
+    .CreateLogger();
+
+            builder.Host.UseSerilog();
+
             // Controllers
             builder.Services.AddControllers();
 
             // Swagger
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "Farmer Platform API",
+                    Version = "v1"
+                });
+
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Enter JWT Token"
+                });
+
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+            });
 
             // DbContext
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -70,7 +119,7 @@ namespace farmer_platform_api
             }
 
             app.UseHttpsRedirection();
-
+            app.UseMiddleware<ExceptionMiddleware>();
             app.UseAuthentication();
             app.UseAuthorization();
 
@@ -79,69 +128,12 @@ namespace farmer_platform_api
             app.Run();
         }
 
-        //        public static void Main(string[] args)
-        //        {
-        //            var builder = WebApplication.CreateBuilder(args);
+        //Step for Code check in in GIT
 
-        //            // Add services to the container.
+//        git add.
+//git commit -m "Meaningful message"
+//git push
 
-        //            builder.Services.AddControllers();
-        //            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-        //            builder.Services.AddEndpointsApiExplorer();
-        //            builder.Services.AddSwaggerGen();
-
-        //            var app = builder.Build();
-
-        //            // Configure the HTTP request pipeline.
-        //            if (app.Environment.IsDevelopment())
-        //            {
-        //                app.UseSwagger();
-        //                app.UseSwaggerUI();
-        //            }
-        //            builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        //    options.UseSqlServer(
-        //        builder.Configuration.GetConnectionString("DefaultConnection")));
-
-        //            builder.Services.AddAuthentication(options =>
-        //            {
-        //                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        //                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        //            })
-        //.AddJwtBearer(options =>
-        //{
-        //    options.TokenValidationParameters = new TokenValidationParameters
-        //    {
-        //        ValidateIssuer = true,
-        //        ValidateAudience = true,
-        //        ValidateLifetime = true,
-        //        ValidateIssuerSigningKey = true,
-
-        //        ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-        //        ValidAudience = builder.Configuration["JwtSettings:Audience"],
-
-        //        IssuerSigningKey = new SymmetricSecurityKey(
-        //            Encoding.UTF8.GetBytes(
-        //                builder.Configuration["JwtSettings:Key"]))
-        //    };
-        //});
-        //            builder.Services.AddScoped<IAuthService, AuthService>();
-
-        //            builder.Services.AddScoped<JwtTokenGenerator>();
-
-        //            builder.Services.AddAuthorization();
-
-        //            app.UseAuthentication();
-
-        //            app.UseAuthorization();
-
-        //            app.UseHttpsRedirection();
-
-        //            //app.UseAuthorization();
-
-
-        //            app.MapControllers();
-
-        //            app.Run();
-        //        }
+        
     }
 }
