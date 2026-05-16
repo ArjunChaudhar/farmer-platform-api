@@ -104,6 +104,9 @@ namespace farmer_platform_api
             // Custom services
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<JwtTokenGenerator>();
+            builder.Services.AddScoped<
+    IFarmerService,
+    FarmerService>();
 
             // Authorization
             builder.Services.AddAuthorization();
